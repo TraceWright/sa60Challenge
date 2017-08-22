@@ -183,40 +183,45 @@ class App extends Component {
       <div>
           <br/>
               <label>
+                <label>Number of Points: </label>
+                <br/>
                   <input
                       type="text"
                       name="nPointsBox"
-                      placeholder="Enter number of points..."
                       value={ this.state.nPointsBox }
                       onChange={ this.handleChange } />
               </label>
               <br/>
               <label>
+              <label>Grid Size: </label>
+              <br/>
                   <input
                       type="text"
                       name="gridSizeBox"
-                      placeholder="Enter grid size..."
                       value={ this.state.gridSizeBox }
                       onChange={ this.handleChange } />
               </label>
               <br/>
               <label>
+              <label>Circle Diameter: </label>
+              <br/>
                   <input
                       type="text"
                       name="diameterBox"
-                      placeholder="Enter circle diameter size..."
                       value={ this.state.diameterBox }
                       onChange={ this.handleChange } />
               </label>
               <br/>
               <label>
+              <label>Number of Iterations: </label>
+              <br/>
                   <input
                       type="text"
                       name="iterationCountBox"
-                      placeholder="Enter number of iterations..."
                       value={ this.state.iterationCountBox }
                       onChange={ this.handleChange } />
               </label>
+              <br/>
               <br/>
               <button value="Send" onClick={this.runChallenge}>Submit</button>
               <br/>
@@ -225,21 +230,11 @@ class App extends Component {
               <label>{this.state.averagePI}</label>
               <br/>
               <ScatterChart
-                data={ [
-{
-    
-name: "series1",
-
-values: [ { x: 0, y: 20 }, { x: 24, y: 10 } ]
-,
-name2: "series2",
-values2: [ { x: 5, y: 20 }, { x: 25, y: 19 } ]
-  
-}] }
+                data={ this.state.plotPointsArray }
                 width={500}
                 height={400}
                 yHideOrigin={true}
-                title="Scatter Chart"
+                title="Dynamic Grid with n Points"
               />
       </div>
   );
