@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import * as randomNumber from 'random-number-in-range';
+//import { ScatterChart } from 'react-d3';
 
 function numberGenerator(nPoints, gridSize) {
   let count = 0;
@@ -120,33 +121,39 @@ function challengeMain(nPoints, gridSize, diameter, iterationCount) {
   }
   console.log(resultsArray);
   let averagePI = averageEstimatedPI(resultsArray, iterationCount);
-  return { averagePI, resultsArray, iterationCount };
+  return { averagePI, resultsArray, iterationCount, nPoints };
 }
 
-function prepareDataForScatterPlot(resArray, itCount) {
-    let count = 0;
-    //let tempArray = [];
+function prepareDataForScatterPlot(resArray, itCount, nPoints) {
+    let count1 = 0;
+    let count2 = 0;
     let preparedArray = [];
-    //console.log(preparedArray)
-    while(count < itCount) {
-      preparedArray = preparedArray.concat(resArray[count].cArray);
-        //console.log(resArray[count].cArray);
-        //preparedArray = preparedArray.concat(tempArray);
-        count++
+    let formattedArray = [];
+    while(count1 < itCount) {
+      preparedArray = preparedArray.concat(resArray[count1].cArray);
+        count1++
     }
-    console.log(preparedArray);
+    //console.log(preparedArray);
+    let counter = itCount * nPoints;
+    while (count2 < counter) {
+      formattedArray.push({ x: preparedArray[count2][0], y: preparedArray[count2][1] }) 
+      count2++
+    }
+    //console.log(formattedArray);
+    return formattedArray;
  }
 
 class App extends Component {
   constructor(props) {
     super(props);
-
+ 
     this.state = {
         gridSizeBox: '',
         nPointsBox: '',
         diameterBox: '',
         iterationCountBox: '',
         averagePI: '',
+        nPoints: '',
         plotPointsArray: []
       };
 
@@ -163,17 +170,20 @@ class App extends Component {
  runChallenge() {
     // console.log( this.state.nPointsBox );
     // console.log( this.state.gridSizeBox );
-    // console.log( this.state.plotPointsArray );
+    //console.log( 'fa: ' + this.state.plotPointsArray );
     let results = challengeMain(
         this.state.nPointsBox,
         this.state.gridSizeBox,
         this.state.diameterBox,
         this.state.iterationCountBox);
     this.setState({ averagePI: results.averagePI });
-    this.setState({ plotPointsArray: results.resultsArray });
+    this.setState({ nPoints: results.nPoints });
     // console.log('ppa: ' + this.state.plotPointsArray);
-    prepareDataForScatterPlot(results.resultsArray, results.iterationCount);
+    let formattedArray = prepareDataForScatterPlot(results.resultsArray, results.iterationCount, results.nPoints);
+    this.setState({ plotPointsArray: formattedArray });
   }
+
+ 
 
   render() {
     return (
@@ -220,6 +230,14 @@ class App extends Component {
               <br/>
               <label>Average Pi: </label>
               <label>{this.state.averagePI}</label>
+              <br/>
+              {/* <ScatterChart
+                data={this.state.plotPointsArray}
+                width={500}
+                height={400}
+                yHideOrigin={true}
+                title="Scatter Chart"
+              /> */}
       </div>
   );
   }
