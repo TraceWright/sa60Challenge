@@ -73,20 +73,20 @@ class App extends Component {
     this.setState({
         [target.name]: target.value
       });
- }
-
- runChallenge() {
-  let nIterations = this.state.nPointsBox * this.state.iterationCountBox;
-  let cartesianArray = numberGenerator(
-    nIterations,
-    this.state.gridSizeBox,
-  );
-  this.setState({ plotPointsArray: cartesianArray });
-  let picCount = countPointsInsideCircle(nIterations, cartesianArray, this.state.gridSizeBox, this.state.diameterBox)
-  let estAreaOfCircle = estimateAreaOfCircle(picCount.resultTrue, this.state.gridSizeBox, nIterations);
-  let estPI = estimatePI(estAreaOfCircle, this.state.diameterBox);
-  this.setState({ estimatedPI: estPI })
   }
+
+  runChallenge() {
+    let nIterations = this.state.nPointsBox * this.state.iterationCountBox;
+    let cartesianArray = numberGenerator(
+      nIterations,
+      this.state.gridSizeBox,
+    );
+    this.setState({ plotPointsArray: cartesianArray });
+    let picCount = countPointsInsideCircle(nIterations, cartesianArray, this.state.gridSizeBox, this.state.diameterBox)
+    let estAreaOfCircle = estimateAreaOfCircle(picCount.resultTrue, this.state.gridSizeBox, nIterations);
+    let estPI = estimatePI(estAreaOfCircle, this.state.diameterBox);
+    this.setState({ estimatedPI: estPI })
+    }
 
   render() {
     return (
