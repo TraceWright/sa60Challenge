@@ -2,58 +2,50 @@ import React, { Component } from 'react';
 import * as randomNumber from 'random-number-in-range';
 import { ScatterChart } from 'react-d3';
 
-function numberGenerator(nPoints, gridSize) {
+function numberGenerator(nPoints, gridSize, iterationCount) {
   let count = 0;
+  let npxic = nPoints * iterationCount;
   let cartesianArray = [];
-  while (count < nPoints) {
+  cartesianArray.push({
+    name: "series",
+    values: []})
+  while (count < npxic) {
       let numberPairArray = [];
       let randomInt1 = randomNumber(0, gridSize);
       let randomInt2 = randomNumber(0, gridSize);
       numberPairArray.push(randomInt1, randomInt2);
-      cartesianArray.push(numberPairArray);
+      cartesianArray[0].values.push({ x: numberPairArray[0], y: numberPairArray[1] })
       count++;
   }
   return cartesianArray;
 }
 
-function countPointsInsideCircle(nPoints, cartesianArray, gridSize, diameter) {
+function countPointsInsideCircle(nIterations, cartesianArray, gridSize, diameter) {
   let count = 0;
   let radius = diameter / 2;
   let center_x = gridSize / 2;
   let center_y = gridSize / 2;
-  while (count < nPoints) {
-      let result;
-      let cartesianPair = cartesianArray[count];
-      let dx = cartesianPair[0] - center_x;
-      let dy = cartesianPair[1] - center_y;
+  let resultTrue = 0;
+  let resultFalse = 0;
+  while (count < nIterations) {
+      let cartesianPair = cartesianArray[0].values[count];
+      let dx = cartesianPair.x - center_x;
+      let dy = cartesianPair.y - center_y;
 
       if (((dx * dx) + (dy * dy)) < (radius * radius)) {
-          result = true;
+          resultTrue++;
       } else {
-          result = false;
+          resultFalse++;
       }
-      cartesianArray[count].push(result);
       count++
   }
-  return cartesianArray;
+  return { resultTrue, resultFalse };
 }
 
-function calculatePercentage(nPoints, cartesianArrayTF) {
-  let count = 0;
-  let trueCount = 0;
-  let falseCount = 0;
-  while (count < nPoints) {
-      cartesianArrayTF[count][2] ? trueCount++ : falseCount++;
-      count ++
-  }
-  return trueCount;
-}
-
-function estimateAreaOfCircle(pointsInCircle, gridSize, nPoints) {
+function estimateAreaOfCircle(pointsInCircle, gridSize, nIterations) {
   let areaOfSquare = gridSize * gridSize;
   let pic;
-  pic = pointsInCircle / nPoints;
-  console.log(pic * areaOfSquare)
+  pic = pointsInCircle / nIterations;
   return pic * areaOfSquare;
 }
 
@@ -62,85 +54,8 @@ function estimatePI(circleAreaEstimate, diameter) {
   let radiusSquared = radius * radius;
   let cae = circleAreaEstimate;
   let piEstimate = cae / radiusSquared;
-  console.log(piEstimate);
   return piEstimate;
 }
-
-function antiClosureFunction(iterationCount) {
-  let count = 0;
-  let functionArray = [];
-  while (count < iterationCount) {
-          let acFunc = createFunction();
-          functionArray.push(acFunc);
-      count++
-  }
-  return functionArray;
-}
-
-function createFunction() {
-  return function mainFunction(gridSize, diameter, nPoints) {
-      let estimatedPI;
-      let cartesianArray = [];
-      let cartesianArrayTF = [];
-      cartesianArray.length = 0; // reset array
-      cartesianArrayTF.length = 0; // reset array
-      let percentageOfPointsInCircle;
-      let estimatedAreaOfCircle;
-      cartesianArray = numberGenerator(nPoints, gridSize);
-      cartesianArrayTF = countPointsInsideCircle(nPoints, cartesianArray, gridSize, diameter);
-      percentageOfPointsInCircle = calculatePercentage(nPoints, cartesianArrayTF);
-      estimatedAreaOfCircle = estimateAreaOfCircle(percentageOfPointsInCircle, gridSize, nPoints);
-      estimatedPI = estimatePI(estimatedAreaOfCircle, diameter);
-      let cArray = cartesianArrayTF;
-      return { estimatedPI, cArray };
-  }
-}
-
-function averageEstimatedPI(estimatedPIArray, iterationCount) {
-  let count = 0;
-  let total = 0;
-  while (count < iterationCount) {
-      let e = estimatedPIArray[count].estimatedPI;
-      total += e;
-      count ++;
-  }
-  console.log('average: '+ total / iterationCount);
-  return total / iterationCount;
-}
-
-function challengeMain(nPoints, gridSize, diameter, iterationCount) {
-  let resultsArray = [];
-  let MCPIFunctionArray = antiClosureFunction(iterationCount);
-  for (var i = 0; i < iterationCount; i++) {
-      let results;
-      results = MCPIFunctionArray[i](gridSize, diameter, nPoints);
-
-      resultsArray.push(results);
-  }
-  console.log(resultsArray);
-  let averagePI = averageEstimatedPI(resultsArray, iterationCount);
-  return { averagePI, resultsArray, iterationCount, nPoints };
-}
-
-function prepareDataForScatterPlot(resArray, itCount, nPoints) {
-    let count1 = 0;
-    let count2 = 0;
-    let preparedArray = [];
-    let formattedArray = [];
-    formattedArray.push({
-      name: "series1",
-      values: []})
-    while(count1 < itCount) {
-      preparedArray = preparedArray.concat(resArray[count1].cArray);
-        count1++
-    }
-    let counter = itCount * nPoints;
-    while (count2 < counter) {
-      formattedArray[0].values.push({ x: preparedArray[count2][0], y: preparedArray[count2][1] }) 
-      count2++
-    }
-    return formattedArray;
- }
 
 class App extends Component {
   constructor(props) {
@@ -151,7 +66,7 @@ class App extends Component {
         nPointsBox: '',
         diameterBox: '',
         iterationCountBox: '',
-        averagePI: '',
+        estimatedPI: '',
         nPoints: '',
         plotPointsArray: []
       };
@@ -167,15 +82,17 @@ class App extends Component {
  }
 
  runChallenge() {
-    let results = challengeMain(
-        this.state.nPointsBox,
-        this.state.gridSizeBox,
-        this.state.diameterBox,
-        this.state.iterationCountBox);
-    this.setState({ averagePI: results.averagePI });
-    this.setState({ nPoints: results.nPoints });
-    let formattedArray = prepareDataForScatterPlot(results.resultsArray, results.iterationCount, results.nPoints);
-    this.setState({ plotPointsArray: formattedArray });
+  let cartesianArray = numberGenerator(
+    this.state.nPointsBox,
+    this.state.gridSizeBox,
+    this.state.iterationCountBox
+  );
+  let nIterations = this.state.nPointsBox * this.state.iterationCountBox;
+  this.setState({ plotPointsArray: cartesianArray });
+  let picCount = countPointsInsideCircle(nIterations, cartesianArray, this.state.gridSizeBox, this.state.diameterBox)
+  let estAreaOfCircle = estimateAreaOfCircle(picCount.resultTrue, this.state.gridSizeBox, nIterations);
+  let estPI = estimatePI(estAreaOfCircle, this.state.diameterBox);
+  this.setState({ estimatedPI: estPI })
   }
 
   render() {
@@ -227,7 +144,7 @@ class App extends Component {
               <br/>
               <br/>
               <label>Average Pi: </label>
-              <label>{this.state.averagePI}</label>
+              <label>{this.state.estimatedPI}</label>
               <br/>
               <ScatterChart
                 data={ this.state.plotPointsArray }
