@@ -2,14 +2,13 @@ import React, { Component } from 'react';
 import * as randomNumber from 'random-number-in-range';
 import { ScatterChart } from 'react-d3';
 
-function numberGenerator(nPoints, gridSize, iterationCount) {
+function numberGenerator(nIterations, gridSize) {
   let count = 0;
-  let npxic = nPoints * iterationCount;
   let cartesianArray = [];
   cartesianArray.push({
     name: "series",
     values: []})
-  while (count < npxic) {
+  while (count < nIterations) {
       let numberPairArray = [];
       let randomInt1 = randomNumber(0, gridSize);
       let randomInt2 = randomNumber(0, gridSize);
@@ -31,12 +30,7 @@ function countPointsInsideCircle(nIterations, cartesianArray, gridSize, diameter
       let cartesianPair = cartesianArray[0].values[count];
       let dx = cartesianPair.x - center_x;
       let dy = cartesianPair.y - center_y;
-
-      if (((dx * dx) + (dy * dy)) < (radius * radius)) {
-          resultTrue++;
-      } else {
-          resultFalse++;
-      }
+      ((dx * dx) + (dy * dy)) < (radius * radius) ? resultTrue++: resultFalse++;
       count++
   }
   return { resultTrue, resultFalse };
@@ -82,12 +76,11 @@ class App extends Component {
  }
 
  runChallenge() {
-  let cartesianArray = numberGenerator(
-    this.state.nPointsBox,
-    this.state.gridSizeBox,
-    this.state.iterationCountBox
-  );
   let nIterations = this.state.nPointsBox * this.state.iterationCountBox;
+  let cartesianArray = numberGenerator(
+    nIterations,
+    this.state.gridSizeBox,
+  );
   this.setState({ plotPointsArray: cartesianArray });
   let picCount = countPointsInsideCircle(nIterations, cartesianArray, this.state.gridSizeBox, this.state.diameterBox)
   let estAreaOfCircle = estimateAreaOfCircle(picCount.resultTrue, this.state.gridSizeBox, nIterations);
