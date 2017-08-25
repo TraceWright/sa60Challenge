@@ -1,73 +1,103 @@
 import React, { Component } from 'react';
 import * as randomNumber from 'random-number-in-range';
 import { ScatterChart } from 'react-d3';
+import { ScatterPlot } from './ScatterPlot.js';
 
-function numberGenerator(nIterations, gridSize) {
+function numberGenerator(nPoints, iterationCount, gridSize) {
   let count = 0;
   let cartesianArray = [];
-  cartesianArray.push({
-    name: "series",
-    values: []})
-  while (count < nIterations) {
+  while (count < iterationCount) {
+    cartesianArray.push({
+      name: "series",
+      values: []
+    })
+    count++
+  }
+  count = 0;
+  while (count < nPoints * iterationCount) {
       let numberPairArray = [];
       let randomInt1 = randomNumber(0, gridSize);
       let randomInt2 = randomNumber(0, gridSize);
       numberPairArray.push(randomInt1, randomInt2);
-      cartesianArray[0].values.push({ x: numberPairArray[0], y: numberPairArray[1] })
+      cartesianArray[Math.floor(count / nPoints)].values.push({ x: numberPairArray[0], y: numberPairArray[1] })
       count++;
   }
   return cartesianArray;
 }
 
-function countPointsInsideCircle(nIterations, cartesianArray, gridSize, diameter) {
-  let count = 0;
+function countPointsInsideCircle(nPoints, iterationCount, cartesianArray, gridSize, diameter) {
   let radius = diameter / 2;
   let center_x = gridSize / 2;
   let center_y = gridSize / 2;
-  let resultTrue = 0;
-  let resultFalse = 0;
-  while (count < nIterations) {
-      let cartesianPair = cartesianArray[0].values[count];
+  let tfArray = [];
+  for (let i = 0; i < iterationCount; i++) {
+    let count = 0;
+    let itRes = cartesianArray[i].values.reduce(function(acc, item) {
+      let cartesianPair = cartesianArray[i].values[count];
       let dx = cartesianPair.x - center_x;
       let dy = cartesianPair.y - center_y;
-      ((dx * dx) + (dy * dy)) < (radius * radius) ? resultTrue++: resultFalse++;
-      count++
+      let inCircle = ((dx * dx) + (dy * dy)) < (radius * radius);
+      count ++
+      return {
+        resultTrue: inCircle ? acc.resultTrue + 1 : acc.resultTrue, 
+        resultFalse: inCircle ? acc.resultFalse : acc.resultFalse + 1
+      }
+    },{ 
+      resultTrue: 0, 
+      resultFalse: 0
+    })
+    tfArray.push(itRes);
   }
-  return { resultTrue, resultFalse };
+  return tfArray;
 }
 
-function estimateAreaOfCircle(pointsInCircle, gridSize, nIterations) {
+function estimateAreaOfCircle(tfArray, gridSize, iterationCount, nPoints) {
   let areaOfSquare = gridSize * gridSize;
   let pic;
-  pic = pointsInCircle / nIterations;
-  return pic * areaOfSquare;
+  let acEstArray = [];
+  for (let i = 0; i < iterationCount; i++) {
+    pic = tfArray[i].resultTrue / nPoints;
+    acEstArray.push(pic * areaOfSquare)
+  }
+  return acEstArray;
 }
 
-function estimatePI(circleAreaEstimate, diameter) {
+function estimatePI(acEstArray, diameter, iterationCount) {
   let radius = diameter / 2;
   let radiusSquared = radius * radius;
-  let cae = circleAreaEstimate;
-  let piEstimate = cae / radiusSquared;
-  return piEstimate;
+  let estPIArr = [];
+  for (let i = 0; i < iterationCount; i++) {    
+    let piEstimate = acEstArray[i] / radiusSquared;
+    estPIArr.push(piEstimate);
+  }
+  return estPIArr;
 }
+
+function totalEstimatePi(estPIArr, iterationCount) {
+  let totalEstPi;
+  for (let i = 0; i < iterationCount; i++) {
+    totalEstPi =+ estPIArr[i]
+  }
+  return totalEstPi;
+} 
 
 class App extends Component {
   constructor(props) {
     super(props);
  
     this.state = {
-        gridSizeBox: '',
-        nPointsBox: '',
-        diameterBox: '',
-        iterationCountBox: '',
-        estimatedPI: '',
+        gridSize: '',
         nPoints: '',
+        diameter: '',
+        iterationCount: '',
+        estimatedPI: '',
         plotPointsArray: []
       };
 
+
     this.handleChange = this.handleChange.bind(this);
     this.runChallenge = this.runChallenge.bind(this);
-  }
+  }  
 
   handleChange({ target }) {
     this.setState({
@@ -76,17 +106,33 @@ class App extends Component {
   }
 
   runChallenge() {
-    let nIterations = this.state.nPointsBox * this.state.iterationCountBox;
+console.log(this.state.plotPointsArray)
     let cartesianArray = numberGenerator(
-      nIterations,
-      this.state.gridSizeBox,
+      this.state.nPoints,
+      this.state.iterationCount,
+      this.state.gridSize,
     );
     this.setState({ plotPointsArray: cartesianArray });
-    let picCount = countPointsInsideCircle(nIterations, cartesianArray, this.state.gridSizeBox, this.state.diameterBox)
-    let estAreaOfCircle = estimateAreaOfCircle(picCount.resultTrue, this.state.gridSizeBox, nIterations);
-    let estPI = estimatePI(estAreaOfCircle, this.state.diameterBox);
-    this.setState({ estimatedPI: estPI })
+    let tfArr = countPointsInsideCircle(this.state.nPoints, this.state.iterationCount, cartesianArray, this.state.gridSize, this.state.diameter)
+    let acEstArr = estimateAreaOfCircle(tfArr, this.state.gridSize, this.state.iterationCount, this.state.nPoints);
+    let estPIArr = estimatePI(acEstArr, this.state.diameter, this.state.iterationCount);
+    let totalEstPi = totalEstimatePi(estPIArr, this.state.iterationCount);
+    this.setState({ estimatedPI: totalEstPi })
     }
+
+  // createGraphs() {
+  //   if (this.state.plotPointsArray = []) {
+  //     return
+  //   } else {
+  //     this.createGraph();
+  //   }
+  // }
+
+  // createGraph(plotPointsArray) {
+  //   // console.log(plotPointsArray);
+  //   // console.log(plotPointsArray[0]);
+  //   return <ScatterChart data={ this.state.plotPointsArray } width={250} height={200} yHideOrigin={true} title="Dynamic Grid with n Points" />
+  // }
 
   render() {
     return (
@@ -97,8 +143,8 @@ class App extends Component {
                 <br/>
                   <input
                       type="text"
-                      name="nPointsBox"
-                      value={ this.state.nPointsBox }
+                      name="nPoints"
+                      value={ this.state.nPoints }
                       onChange={ this.handleChange } />
               </label>
               <br/>
@@ -107,8 +153,8 @@ class App extends Component {
               <br/>
                   <input
                       type="text"
-                      name="gridSizeBox"
-                      value={ this.state.gridSizeBox }
+                      name="gridSize"
+                      value={ this.state.gridSize }
                       onChange={ this.handleChange } />
               </label>
               <br/>
@@ -117,8 +163,8 @@ class App extends Component {
               <br/>
                   <input
                       type="text"
-                      name="diameterBox"
-                      value={ this.state.diameterBox }
+                      name="diameter"
+                      value={ this.state.diameter }
                       onChange={ this.handleChange } />
               </label>
               <br/>
@@ -127,8 +173,8 @@ class App extends Component {
               <br/>
                   <input
                       type="text"
-                      name="iterationCountBox"
-                      value={ this.state.iterationCountBox }
+                      name="iterationCount"
+                      value={ this.state.iterationCount }
                       onChange={ this.handleChange } />
               </label>
               <br/>
@@ -139,16 +185,18 @@ class App extends Component {
               <label>Average Pi: </label>
               <label>{this.state.estimatedPI}</label>
               <br/>
-              <ScatterChart
-                data={ this.state.plotPointsArray }
-                width={500}
-                height={400}
-                yHideOrigin={true}
-                title="Dynamic Grid with n Points"
-              />
-      </div>
+              <ScatterChart data={ this.state.plotPointsArray } width={250} height={200} yHideOrigin={true} title="Dynamic Grid with n Points" />
+
+              {/* <ScatterPlot/>
+              {
+                this.props.children
+              } */}
+            {/* {this.createGraph()} */}
+          </div>
   );
   }
 }
 
 export default App;
+
+
