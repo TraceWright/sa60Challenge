@@ -79,7 +79,20 @@ function totalEstimatePi(estPIArr, iterationCount) {
     totalEstPi =+ estPIArr[i]
   }
   return totalEstPi;
-} 
+}
+ 
+function ScatterGraph(props) {
+  // console.log('child: ' + props.data)
+  return(
+      <ScatterChart
+        data={ props.data }
+        width={500}
+        height={400}
+        yHideOrigin={true}
+        title="Dynamic Grid with n Points"
+      />
+  )
+}
 
 class App extends Component {
   constructor(props) {
@@ -94,6 +107,7 @@ class App extends Component {
         plotPointsArray: []
       };
 
+    this.renderChildren = this.renderChildren.bind(this)
 
     this.handleChange = this.handleChange.bind(this);
     this.runChallenge = this.runChallenge.bind(this);
@@ -120,6 +134,15 @@ console.log(this.state.plotPointsArray)
     this.setState({ estimatedPI: totalEstPi })
     }
 
+    renderChildren() {
+      // return React.Children.map(this.props.children, child => {
+      //   return React.cloneElement(child, {
+      //     name: this.state.plotPointsArray
+      //   })
+    // })
+      return this.props.children
+    }
+
   // createGraphs() {
   //   if (this.state.plotPointsArray = []) {
   //     return
@@ -133,6 +156,8 @@ console.log(this.state.plotPointsArray)
   //   // console.log(plotPointsArray[0]);
   //   return <ScatterChart data={ this.state.plotPointsArray } width={250} height={200} yHideOrigin={true} title="Dynamic Grid with n Points" />
   // }
+
+
 
   render() {
     return (
@@ -185,13 +210,9 @@ console.log(this.state.plotPointsArray)
               <label>Average Pi: </label>
               <label>{this.state.estimatedPI}</label>
               <br/>
-              <ScatterChart data={ this.state.plotPointsArray } width={250} height={200} yHideOrigin={true} title="Dynamic Grid with n Points" />
-
-              {/* <ScatterPlot/>
-              {
-                this.props.children
-              } */}
-            {/* {this.createGraph()} */}
+              {/* <ScatterChart data={ this.state.plotPointsArray } width={500} height={400} yHideOrigin={true} title="Dynamic Grid with n Points" /> */}
+            
+              <ScatterGraph data={ this.state.plotPointsArray }/>
           </div>
   );
   }
