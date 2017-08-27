@@ -1,14 +1,14 @@
 import React, { Component } from 'react';
 import * as randomNumber from 'random-number-in-range';
 import { ScatterChart } from 'react-d3';
-import { ScatterPlot } from './ScatterPlot.js';
+import './App.css'
 
 function numberGenerator(nPoints, iterationCount, gridSize) {
   let count = 0;
   let cartesianArray = [];
   while (count < iterationCount) {
     cartesianArray.push({
-      name: "series",
+      name: "series_" + count,
       values: []
     })
     count++
@@ -82,15 +82,31 @@ function totalEstimatePi(estPIArr, iterationCount) {
 }
  
 function ScatterGraph(props) {
-  // console.log('child: ' + props.data)
   return(
       <ScatterChart
-        data={ props.data }
-        width={500}
-        height={400}
+        data={ [props.data] }
+        width={400}
+        height={320}
         yHideOrigin={true}
-        title="Dynamic Grid with n Points"
+        //xAxisTickInterval={{interval: ?}} wip
       />
+  )
+}
+
+function ScatterParent(props) {
+  return(
+    <div className="scatPar">
+      {props.data.map((item, i) =>
+      <div className="scat" key={ item.name + '_sp'}>
+      <b><label>Iteration {i + 1}</label></b>
+      <br/>
+      <ScatterGraph key={ item.name } data={ item }/>
+      <label key={ item.name + '_pi' }> Estimated Pi: { Math.round(props.estPi[i] * 100) / 100 }  </label>
+      <p/>
+      <br/>
+      </div>)
+}
+      </div>
   )
 }
 
@@ -104,10 +120,9 @@ class App extends Component {
         diameter: '',
         iterationCount: '',
         estimatedPI: '',
-        plotPointsArray: []
+        plotPointsArray: [],
+        estPiArray: []
       };
-
-    this.renderChildren = this.renderChildren.bind(this)
 
     this.handleChange = this.handleChange.bind(this);
     this.runChallenge = this.runChallenge.bind(this);
@@ -120,7 +135,6 @@ class App extends Component {
   }
 
   runChallenge() {
-console.log(this.state.plotPointsArray)
     let cartesianArray = numberGenerator(
       this.state.nPoints,
       this.state.iterationCount,
@@ -131,39 +145,16 @@ console.log(this.state.plotPointsArray)
     let acEstArr = estimateAreaOfCircle(tfArr, this.state.gridSize, this.state.iterationCount, this.state.nPoints);
     let estPIArr = estimatePI(acEstArr, this.state.diameter, this.state.iterationCount);
     let totalEstPi = totalEstimatePi(estPIArr, this.state.iterationCount);
-    this.setState({ estimatedPI: totalEstPi })
+    this.setState({ estimatedPI: totalEstPi, estPiArray: estPIArr })
     }
-
-    renderChildren() {
-      // return React.Children.map(this.props.children, child => {
-      //   return React.cloneElement(child, {
-      //     name: this.state.plotPointsArray
-      //   })
-    // })
-      return this.props.children
-    }
-
-  // createGraphs() {
-  //   if (this.state.plotPointsArray = []) {
-  //     return
-  //   } else {
-  //     this.createGraph();
-  //   }
-  // }
-
-  // createGraph(plotPointsArray) {
-  //   // console.log(plotPointsArray);
-  //   // console.log(plotPointsArray[0]);
-  //   return <ScatterChart data={ this.state.plotPointsArray } width={250} height={200} yHideOrigin={true} title="Dynamic Grid with n Points" />
-  // }
-
-
 
   render() {
     return (
       <div>
+        <h3 style={{textAlign: 'center'}}>Monte Carlo Simulation</h3>
           <br/>
-              <label>
+            <div className="inputBox">
+              <div>
                 <label>Number of Points: </label>
                 <br/>
                   <input
@@ -171,9 +162,9 @@ console.log(this.state.plotPointsArray)
                       name="nPoints"
                       value={ this.state.nPoints }
                       onChange={ this.handleChange } />
-              </label>
+              </div>
               <br/>
-              <label>
+              <div>
               <label>Grid Size: </label>
               <br/>
                   <input
@@ -181,9 +172,9 @@ console.log(this.state.plotPointsArray)
                       name="gridSize"
                       value={ this.state.gridSize }
                       onChange={ this.handleChange } />
-              </label>
+              </div>
               <br/>
-              <label>
+              <div>
               <label>Circle Diameter: </label>
               <br/>
                   <input
@@ -191,9 +182,9 @@ console.log(this.state.plotPointsArray)
                       name="diameter"
                       value={ this.state.diameter }
                       onChange={ this.handleChange } />
-              </label>
+              </div>
               <br/>
-              <label>
+              <div>
               <label>Number of Iterations: </label>
               <br/>
                   <input
@@ -201,18 +192,17 @@ console.log(this.state.plotPointsArray)
                       name="iterationCount"
                       value={ this.state.iterationCount }
                       onChange={ this.handleChange } />
-              </label>
-              <br/>
+              </div>
               <br/>
               <button value="Send" onClick={this.runChallenge}>Submit</button>
               <br/>
               <br/>
-              <label>Average Pi: </label>
-              <label>{this.state.estimatedPI}</label>
+              <label>Average Pi for all Iterations: </label>
+              <label>{ Math.round(this.state.estimatedPI * 100) / 100}</label>
+              </div>
               <br/>
-              {/* <ScatterChart data={ this.state.plotPointsArray } width={500} height={400} yHideOrigin={true} title="Dynamic Grid with n Points" /> */}
-            
-              <ScatterGraph data={ this.state.plotPointsArray }/>
+              <br/>
+              <ScatterParent data={ this.state.plotPointsArray } estPi={this.state.estPiArray}/>
           </div>
   );
   }

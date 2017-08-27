@@ -1,4 +1,4 @@
-.App {
+.inputBox {
   text-align: center;
 }
 
@@ -21,4 +21,27 @@
 @keyframes App-logo-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+.scatPar {
+  display: grid;
+  grid-gap: 10px;
+  width: 100%; 
+  text-align: center;
+}
+
+.scat {
+  grid-area: 'scat';
+}
+
+.inputBox {
+  text-align: center;
+}
+
+@media screen {
+  .scatPar {
+    grid-template-columns: 50%  50%;
+    grid-template-areas:
+      'scat scat'
+  }
 }
