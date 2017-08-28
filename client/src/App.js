@@ -3,61 +3,57 @@ import * as randomNumber from 'random-number-in-range';
 import { ScatterChart } from 'react-d3';
 import './App.css'
 
-function numberGenerator(nPoints, iterationCount, gridSize) {
-  let count = 0;
+function numberGenerator(nPoints, iterationCount, gridSize, diameter) {
   let cartesianArray = [];
-  while (count < iterationCount) {
-    cartesianArray.push({
-      name: "series_" + count,
-      values: []
-    })
-    count++
-  }
-  count = 0;
-  while (count < nPoints * iterationCount) {
-      let numberPairArray = [];
-      let randomInt1 = randomNumber(0, gridSize);
-      let randomInt2 = randomNumber(0, gridSize);
-      numberPairArray.push(randomInt1, randomInt2);
-      cartesianArray[Math.floor(count / nPoints)].values.push({ x: numberPairArray[0], y: numberPairArray[1] })
-      count++;
-  }
+  for (let i = 0; i < iterationCount; i++) { 
+    cartesianArray.push([
+        { name: 'series' +  i + '_a', 
+          values: [] },
+        {  name: 'series' +  i + '_b',
+          values: [] }
+    ]);
+    for (let j = 0; j < nPoints; j++) {
+        let nPair = { x: randomNumber(0, gridSize), y: randomNumber(0, gridSize) }
+        let inCrc = inCircle(nPair, diameter, gridSize);
+        if (inCrc) {
+          cartesianArray[i][0].values.push(nPair);
+        } else if (!inCrc) {
+          cartesianArray[i][1].values.push(nPair);
+        }
+      }
+    }
   return cartesianArray;
 }
 
-function countPointsInsideCircle(nPoints, iterationCount, cartesianArray, gridSize, diameter) {
+function inCircle(nPair, diameter, gridSize) {
   let radius = diameter / 2;
   let center_x = gridSize / 2;
   let center_y = gridSize / 2;
-  let tfArray = [];
-  for (let i = 0; i < iterationCount; i++) {
-    let count = 0;
-    let itRes = cartesianArray[i].values.reduce(function(acc, item) {
-      let cartesianPair = cartesianArray[i].values[count];
-      let dx = cartesianPair.x - center_x;
-      let dy = cartesianPair.y - center_y;
-      let inCircle = ((dx * dx) + (dy * dy)) < (radius * radius);
-      count ++
-      return {
-        resultTrue: inCircle ? acc.resultTrue + 1 : acc.resultTrue, 
-        resultFalse: inCircle ? acc.resultFalse : acc.resultFalse + 1
-      }
-    },{ 
-      resultTrue: 0, 
-      resultFalse: 0
-    })
-    tfArray.push(itRes);
-  }
-  return tfArray;
+  let dx = nPair.x - center_x;
+  let dy = nPair.y - center_y;
+  let inCrc = ((dx * dx) + (dy * dy)) < (radius * radius);
+  return inCrc;
 }
+
+function countPointsInsideCircle(iterationCount, cartesianArray) {
+  let resTrueTot = 0;
+  let tfArr = [];
+  for (let i = 0; i < iterationCount; i++) {
+    let resTrue = cartesianArray[i][0].values.length;
+    let resFalse = cartesianArray[i][1].values.length;
+    tfArr.push({resTrue, resFalse});
+    resTrueTot += resTrue; 
+  }
+  return { tfArr, resTrueTot }    
+}  
 
 function estimateAreaOfCircle(tfArray, gridSize, iterationCount, nPoints) {
   let areaOfSquare = gridSize * gridSize;
   let pic;
   let acEstArray = [];
   for (let i = 0; i < iterationCount; i++) {
-    pic = tfArray[i].resultTrue / nPoints;
-    acEstArray.push(pic * areaOfSquare)
+    pic = tfArray[i].resTrue / nPoints;
+    acEstArray.push(pic * areaOfSquare);
   }
   return acEstArray;
 }
@@ -73,18 +69,19 @@ function estimatePI(acEstArray, diameter, iterationCount) {
   return estPIArr;
 }
 
-function totalEstimatePi(estPIArr, iterationCount) {
-  let totalEstPi;
-  for (let i = 0; i < iterationCount; i++) {
-    totalEstPi =+ estPIArr[i]
-  }
+function totalEstimatePi(resTrueTot, iterationCount, gridSize, diameter, nPoints) {
+  let radius = diameter / 2;
+  let radiusSquared = radius * radius;
+  let areaOfSquare = gridSize * gridSize;  
+  let totalEstPi = resTrueTot / nPoints * areaOfSquare / iterationCount / radiusSquared;
   return totalEstPi;
 }
  
-function ScatterGraph(props) {
+function ScatterGraph(props) { 
+  let vt = props.data;
   return(
       <ScatterChart
-        data={ [props.data] }
+        data={ vt }
         width={400}
         height={320}
         yHideOrigin={true}
@@ -97,7 +94,7 @@ function ScatterParent(props) {
   return(
     <div className="scatPar">
       {props.data.map((item, i) =>
-      <div className="scat" key={ item.name + '_sp'}>
+      <div className="scat" key={ item[1].name + '_sp'}>
       <b><label>Iteration {i + 1}</label></b>
       <br/>
       <ScatterGraph key={ item.name } data={ item }/>
@@ -139,12 +136,13 @@ class App extends Component {
       this.state.nPoints,
       this.state.iterationCount,
       this.state.gridSize,
+      this.state.diameter
     );
     this.setState({ plotPointsArray: cartesianArray });
-    let tfArr = countPointsInsideCircle(this.state.nPoints, this.state.iterationCount, cartesianArray, this.state.gridSize, this.state.diameter)
-    let acEstArr = estimateAreaOfCircle(tfArr, this.state.gridSize, this.state.iterationCount, this.state.nPoints);
+    let obj = countPointsInsideCircle(this.state.iterationCount, cartesianArray);
+    let acEstArr = estimateAreaOfCircle(obj.tfArr, this.state.gridSize, this.state.iterationCount, this.state.nPoints);
     let estPIArr = estimatePI(acEstArr, this.state.diameter, this.state.iterationCount);
-    let totalEstPi = totalEstimatePi(estPIArr, this.state.iterationCount);
+    let totalEstPi = totalEstimatePi(obj.resTrueTot, this.state.iterationCount, this.state.gridSize, this.state.diameter, this.state.nPoints);
     this.setState({ estimatedPI: totalEstPi, estPiArray: estPIArr })
     }
 
@@ -157,41 +155,25 @@ class App extends Component {
               <div>
                 <label>Number of Points: </label>
                 <br/>
-                  <input
-                      type="text"
-                      name="nPoints"
-                      value={ this.state.nPoints }
-                      onChange={ this.handleChange } />
+                  <input type="text" name="nPoints" value={ this.state.nPoints } onChange={ this.handleChange } />
               </div>
               <br/>
               <div>
               <label>Grid Size: </label>
               <br/>
-                  <input
-                      type="text"
-                      name="gridSize"
-                      value={ this.state.gridSize }
-                      onChange={ this.handleChange } />
+                  <input type="text" name="gridSize" value={ this.state.gridSize } onChange={ this.handleChange } />
               </div>
               <br/>
               <div>
               <label>Circle Diameter: </label>
               <br/>
-                  <input
-                      type="text"
-                      name="diameter"
-                      value={ this.state.diameter }
-                      onChange={ this.handleChange } />
+                  <input type="text" name="diameter" value={ this.state.diameter } onChange={ this.handleChange } />
               </div>
               <br/>
               <div>
               <label>Number of Iterations: </label>
               <br/>
-                  <input
-                      type="text"
-                      name="iterationCount"
-                      value={ this.state.iterationCount }
-                      onChange={ this.handleChange } />
+                  <input type="text" name="iterationCount" value={ this.state.iterationCount } onChange={ this.handleChange } />
               </div>
               <br/>
               <button value="Send" onClick={this.runChallenge}>Submit</button>
@@ -209,5 +191,3 @@ class App extends Component {
 }
 
 export default App;
-
-
